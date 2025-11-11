@@ -140,6 +140,11 @@
         log('Ready. Click "Start Share" to begin.');
       }
     });
+
+    const peer = new Peer(); // generates a random peer ID
+peer.on('open', id => {
+  console.log('My peer ID is:', id);
+});
   </script>
 </body>
 </html>
