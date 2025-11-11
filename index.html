@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Screen Share Demo (jQuery)</title>
+  <style>
+    body { font-family: system-ui, Arial; max-width: 900px; margin: 24px; }
+    video { width: 100%; max-height: 60vh; background:#000; }
+    .controls { margin: 12px 0; gap:8px; display:flex; flex-wrap:wrap; }
+    button { padding:8px 12px; border-radius:6px; cursor:pointer; }
+    .logs { margin-top:10px; white-space:pre-wrap; font-family:monospace; background:#f7f7f7; padding:10px; border-radius:6px; }
+  </style>
+</head>
+<body>
+  <h1>Screen Share (jQuery + getDisplayMedia)</h1>
+
+  <div class="controls">
+    <button id="startShare">Start Share</button>
+    <button id="stopShare" disabled>Stop Share</button>
+    <button id="screenshot" disabled>Capture Screenshot</button>
+  </div>
+
+  <video id="preview" autoplay playsinline controls></video>
+
+  <div class="logs" id="log"></div>
+
+  <!-- jQuery from CDN -->
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"
+          integrity="sha256-+d0P8y3k6Xf3dWfC6Y0y1lYz0F2QkL1z7kz9+7+F0mY="
+          crossorigin="anonymous"></script>
+
+  <script>
+    $(function () {
+      const $log = $('#log');
+      const $start = $('#startShare');
+      const $stop = $('#stopShare');
+      const $ss = $('#screenshot');
+      const video = document.getElementById('preview');
+
+      let currentStream = null;
+
+      function log(...args) {
+        const txt = args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' ');
+        $log.prepend(new Date().toLocaleTimeString() + ' — ' + txt + '\n');
+      }
+
+      async function startShare() {
+        // Disable start until resolved
+        $start.prop('disabled', true);
+        log('Requesting screen share permission...');
+        try {
+          // You can pass constraints (e.g., prefer window or screen)
+          const constraints = { video: { cursor: "always" }, audio: false };
+
+          // Request screen media
+          const stream = await navigator.mediaDevices.getDisplayMedia(constraints);
+          currentStream = stream;
+          video.srcObject = stream;
+          // Optional: make sure video plays
+          await video.play();
+          log('Screen share started.');
+
+          // Enable stop and screenshot
+          $stop.prop('disabled', false);
+          $ss.prop('disabled', false);
+
+          // Listen for the user stopping the share from the browser UI (e.g., stop sharing)
+          const [track] = stream.getVideoTracks();
+          track.onended = () => {
+            log('Track ended (user likely stopped share from browser).');
+            stopShare();
+          };
+        } catch (err) {
+          log('Error starting screen share:', err?.name || err?.message || err);
+          $start.prop('disabled', false);
+        }
+      }
+
+      function stopShare() {
+        if (!currentStream) return;
+        log('Stopping screen share...');
+        // Stop all tracks
+        currentStream.getTracks().forEach(t => t.stop());
+        video.srcObject = null;
+        currentStream = null;
+        $stop.prop('disabled', true);
+        $ss.prop('disabled', true);
+        $start.prop('disabled', false);
+        log('Screen share stopped.');
+      }
+
+      // Capture screenshot from shared video
+      function captureScreenshot() {
+        if (!video || !video.srcObject) {
+          log('No active stream to capture.');
+          return;
+        }
+        const w = video.videoWidth;
+        const h = video.videoHeight;
+        if (!w || !h) {
+          log('Video dimensions not available yet.');
+          return;
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        try {
+          ctx.drawImage(video, 0, 0, w, h);
+          const dataUrl = canvas.toDataURL('image/png');
+          // open in new tab (user can save)
+          const win = window.open();
+          if (win) {
+            win.document.write('<img src="' + dataUrl + '" alt="screenshot">');
+            log('Screenshot opened in new tab. Right click > Save as to save it.');
+          } else {
+            log('Popup blocked. Cannot open screenshot in new tab.');
+          }
+        } catch (err) {
+          log('Screenshot failed:', err);
+        }
+      }
+
+      // jQuery event bindings
+      $start.on('click', startShare);
+      $stop.on('click', stopShare);
+      $ss.on('click', captureScreenshot);
+
+      // If user navigates away or reloads, ensure tracks stopped
+      window.addEventListener('beforeunload', () => {
+        if (currentStream) currentStream.getTracks().forEach(t => t.stop());
+      });
+
+      // Informational: check browser capability
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+        log('getDisplayMedia not supported in this browser. Use Chrome/Edge/Firefox (recent versions).');
+        $start.prop('disabled', true);
+      } else {
+        log('Ready. Click "Start Share" to begin.');
+      }
+    });
+  </script>
+</body>
+</html>
