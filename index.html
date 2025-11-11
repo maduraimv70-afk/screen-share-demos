@@ -126,17 +126,16 @@
         }
       }
 
-       function startview() {
+
+document.getElementById('startview').onclick = async () => {
       const stream = await navigator.mediaDevices.getDisplayMedia({ video: true });
       document.getElementById('preview').srcObject = stream;
-        };
-     
+    };     
       
       // jQuery event bindings
       $start.on('click', startShare);
       $stop.on('click', stopShare);
       $ss.on('click', captureScreenshot);
-     $view.on('click', startview);
 
       // If user navigates away or reloads, ensure tracks stopped
       window.addEventListener('beforeunload', () => {
