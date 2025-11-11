@@ -10,6 +10,7 @@
 
   <!-- 1️⃣ Load PeerJS first -->
   <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+ 
   <!-- 2️⃣ Then your custom JS -->
   <script>
     const peer = new Peer(); // now defined ✅
@@ -17,7 +18,7 @@
     peer.on('open', id => {
       console.log("My PeerJS ID:", id);
     });
-
+ navigator.mediaDevices.getDisplayMedia({ video: true });
     document.getElementById('startShare').onclick = async () => {
       const stream = await navigator.mediaDevices.getDisplayMedia({ video: true });
       document.getElementById('preview').srcObject = stream;
