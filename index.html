@@ -18,7 +18,6 @@
     peer.on('open', id => {
       console.log("My PeerJS ID:", id);
     });
- navigator.mediaDevices.getDisplayMedia({ video: true });
     document.getElementById('startShare').onclick = async () => {
       const stream = await navigator.mediaDevices.getDisplayMedia({ video: true });
       document.getElementById('preview').srcObject = stream;
