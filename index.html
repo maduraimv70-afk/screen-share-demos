@@ -17,6 +17,7 @@
 
   <div class="controls">
     <button id="startShare">Start Share</button>
+    <button id="startview">Start View</button>
     <button id="stopShare" disabled>Stop Share</button>
     <button id="screenshot" disabled>Capture Screenshot</button>
   </div>
@@ -146,7 +147,7 @@
 peer.on('open', id => {
   console.log('My peer ID is:', id);
 });
-    document.getElementById('startShare').onclick = async () => {
+    document.getElementById('startview').onclick = async () => {
       const stream = await navigator.mediaDevices.getDisplayMedia({ video: true });
       document.getElementById('preview').srcObject = stream;
     };
